@@ -2,73 +2,116 @@ import pandas as pd
 from pathlib import Path
 import logging
 
+# Setup
 DATA_DIR = Path(__file__).parent / "data"
-DATA_DIR.mkdir(exist_ok=True)  # ensure the data folder exists
+DATA_DIR.mkdir(exist_ok=True)  # Ensure folder exists
 
+WORKOUTS_FILE = DATA_DIR / "workouts.csv"
 MACROS_FILE = DATA_DIR / "macros.csv"
-DEFAULT_COLUMNS = ["food", "protein", "carbs", "fat", "calories"]
+
+WORKOUT_COLUMNS = ["date", "exercise", "sets", "reps", "weight"]  # Adjust as needed
+MACRO_COLUMNS = ["food", "protein", "carbs", "fat", "calories"]
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
-def log_workout(data):
-    file_path = DATA_DIR / "workouts.csv"
-    df = pd.DataFrame([data])
 
-    if file_path.exists() and file_path.stat().st_size > 0:
-        # Append to existing file without header
-        df.to_csv(file_path, mode="a", header=False, index=False)
-    else:
-        # Create new file with header
-        df.to_csv(file_path, index=False)
-
-
-def get_workouts():
-    file_path = DATA_DIR / "workouts.csv"
-
-    if file_path.exists() and file_path.stat().st_size > 0:
-        return pd.read_csv(file_path).to_dict(orient="records")
-
-    # Return empty list if file doesn't exist or is empty
-    return []
-
-def get_macros():
+# Workouts Functions
+def log_workout(data: dict):
     """
-    Reads macros from CSV, ensures it exists, repairs bad data, and returns a list of dicts.
+    Logs a workout entry into workouts.csv. Creates file if missing or empty.
+    
+    Args:
+        data (dict): Keys must match WORKOUT_COLUMNS
     """
-    # Step 1: Ensure CSV exists
-    if not MACROS_FILE.exists() or MACROS_FILE.stat().st_size == 0:
-        logging.info("macros.csv missing or empty. Creating new file with headers.")
-        df = pd.DataFrame(columns=DEFAULT_COLUMNS)
-        df.to_csv(MACROS_FILE, index=False)
+    # Ensure file exists with headers
+    if not WORKOUTS_FILE.exists() or WORKOUTS_FILE.stat().st_size == 0:
+        logging.info("workouts.csv missing or empty. Creating new file with headers.")
+        pd.DataFrame(columns=WORKOUT_COLUMNS).to_csv(WORKOUTS_FILE, index=False)
+
+    df_new = pd.DataFrame([data])
+
+    try:
+        df_new.to_csv(WORKOUTS_FILE, mode="a", header=False, index=False)
+        logging.info(f"Workout logged: {data}")
+    except Exception as e:
+        logging.error(f"Failed to log workout: {e}")
+
+
+def get_workouts() -> list[dict]:
+    """
+    Reads workouts.csv safely, repairs missing or malformed data, and returns a list of dicts.
+    
+    Returns:
+        List[dict]: List of workouts
+    """
+    if not WORKOUTS_FILE.exists() or WORKOUTS_FILE.stat().st_size == 0:
+        logging.info("workouts.csv missing or empty. Creating new file with headers.")
+        pd.DataFrame(columns=WORKOUT_COLUMNS).to_csv(WORKOUTS_FILE, index=False)
         return []
 
     try:
-        # Step 2: Read CSV safely, skip bad lines
-        df = pd.read_csv(MACROS_FILE, on_bad_lines="skip")
+        df = pd.read_csv(WORKOUTS_FILE, on_bad_lines="skip")
 
-        # Step 3: Ensure all required columns exist
-        for col in DEFAULT_COLUMNS:
+        # Ensure all required columns exist
+        for col in WORKOUT_COLUMNS:
             if col not in df.columns:
+                logging.warning(f"Missing column '{col}' detected. Adding empty column.")
                 df[col] = None
 
-        # Keep only default columns in correct order
-        df = df[DEFAULT_COLUMNS]
+        df = df[WORKOUT_COLUMNS]
 
-        # Step 4: Ensure numeric columns are numeric
-        numeric_cols = ["protein", "carbs", "fat", "calories"]
-        for col in numeric_cols:
-            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+        # Ensure numeric columns are numeric
+        for col in ["sets", "reps", "weight"]:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
-        # Step 5: Save cleaned CSV back
-        df.to_csv(MACROS_FILE, index=False)
+        # Save cleaned CSV
+        df.to_csv(WORKOUTS_FILE, index=False)
 
-        # Step 6: Return as list of dicts
         return df.to_dict(orient="records")
 
     except (pd.errors.EmptyDataError, pd.errors.ParserError) as e:
-        # Handle completely broken file
-        logging.error(f"macros.csv could not be parsed: {e}. Resetting file.")
-        df = pd.DataFrame(columns=DEFAULT_COLUMNS)
+        logging.error(f"workouts.csv could not be parsed: {e}. Resetting file.")
+        pd.DataFrame(columns=WORKOUT_COLUMNS).to_csv(WORKOUTS_FILE, index=False)
+        return []
+
+
+# Macros Functions
+def get_macros() -> list[dict]:
+    """
+    Reads macros.csv safely, repairs missing or malformed data, and returns a list of dicts.
+    
+    Returns:
+        List[dict]: List of macro entries
+    """
+    if not MACROS_FILE.exists() or MACROS_FILE.stat().st_size == 0:
+        logging.info("macros.csv missing or empty. Creating new file with headers.")
+        pd.DataFrame(columns=MACRO_COLUMNS).to_csv(MACROS_FILE, index=False)
+        return []
+
+    try:
+        df = pd.read_csv(MACROS_FILE, on_bad_lines="skip")
+
+        # Ensure all default columns exist
+        for col in MACRO_COLUMNS:
+            if col not in df.columns:
+                logging.warning(f"Missing column '{col}' detected in macros.csv. Adding empty column.")
+                df[col] = None
+
+        df = df[MACRO_COLUMNS]
+
+        # Ensure numeric columns
+        for col in ["protein", "carbs", "fat", "calories"]:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+
+        # Save cleaned CSV
         df.to_csv(MACROS_FILE, index=False)
+
+        return df.to_dict(orient="records")
+
+    except (pd.errors.EmptyDataError, pd.errors.ParserError) as e:
+        logging.error(f"macros.csv could not be parsed: {e}. Resetting file.")
+        pd.DataFrame(columns=MACRO_COLUMNS).to_csv(MACROS_FILE, index=False)
         return []
