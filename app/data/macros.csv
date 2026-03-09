@@ -7,4 +7,5 @@ def get_macros():
         df.to_csv(file_path, index=False)
         return []
 
-    return pd.read_csv(file_path).to_dict(orient="records")
+    # read CSV safely
+    return pd.read_csv(file_path, quoting=3).to_dict(orient="records")  # quoting=3 means QUOTE_NONE
