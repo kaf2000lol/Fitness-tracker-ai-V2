@@ -2,6 +2,7 @@ import pandas as pd
 from pathlib import Path
 import logging
 
+#Setup
 DATA_DIR = Path(__file__).parent / "data"
 DATA_DIR.mkdir(exist_ok=True)  # Ensure folder exists
 
