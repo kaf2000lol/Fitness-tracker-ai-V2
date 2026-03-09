@@ -1,1 +1,10 @@
+def get_macros():
+    file_path = DATA_DIR / "macros.csv"
 
+    # If file missing or empty, create with headers
+    if not file_path.exists() or file_path.stat().st_size == 0:
+        df = pd.DataFrame(columns=["food", "protein", "carbs", "fat", "calories"])
+        df.to_csv(file_path, index=False)
+        return []
+
+    return pd.read_csv(file_path).to_dict(orient="records")
