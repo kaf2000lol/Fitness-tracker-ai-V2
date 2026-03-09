@@ -78,40 +78,41 @@ def get_workouts() -> list[dict]:
 
 
 # Macros Functions
-def get_macros() -> list[dict]:
-    """
-    Reads macros.csv safely, repairs missing or malformed data, and returns a list of dicts.
-    
-    Returns:
-        List[dict]: List of macro entries
-    """
-    if not MACROS_FILE.exists() or MACROS_FILE.stat().st_size == 0:
-        logging.info("macros.csv missing or empty. Creating new file with headers.")
-        pd.DataFrame(columns=MACRO_COLUMNS).to_csv(MACROS_FILE, index=False)
+def get_macros():
+    file_path = DATA_DIR / "macros.csv"
+    columns = ["food", "protein", "carbs", "fat", "calories"]
+
+    # create file if missing
+    if not file_path.exists():
+        df = pd.DataFrame(columns=columns)
+        df.to_csv(file_path, index=False)
         return []
 
     try:
-        df = pd.read_csv(MACROS_FILE, on_bad_lines="skip")
+        df = pd.read_csv(
+            file_path,
+            on_bad_lines="skip",   # skip corrupted rows
+            engine="python"        # more tolerant parser
+        )
 
-        # Ensure all default columns exist
-        for col in MACRO_COLUMNS:
+        # ensure columns exist
+        for col in columns:
             if col not in df.columns:
-                logging.warning(f"Missing column '{col}' detected in macros.csv. Adding empty column.")
                 df[col] = None
 
-        df = df[MACRO_COLUMNS]
+        df = df[columns]
 
-        # Ensure numeric columns
+        # force numeric columns
         for col in ["protein", "carbs", "fat", "calories"]:
-            if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
-        # Save cleaned CSV
-        df.to_csv(MACROS_FILE, index=False)
+        # rewrite cleaned file
+        df.to_csv(file_path, index=False)
 
         return df.to_dict(orient="records")
 
-    except (pd.errors.EmptyDataError, pd.errors.ParserError) as e:
-        logging.error(f"macros.csv could not be parsed: {e}. Resetting file.")
-        pd.DataFrame(columns=MACRO_COLUMNS).to_csv(MACROS_FILE, index=False)
+    except Exception:
+        # if the file is completely broken, reset it
+        df = pd.DataFrame(columns=columns)
+        df.to_csv(file_path, index=False)
         return []
