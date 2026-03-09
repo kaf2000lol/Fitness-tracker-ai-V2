@@ -2,9 +2,7 @@ import pandas as pd
 from pathlib import Path
 import logging
 
-# -------------------------
 # Setup
-# -------------------------
 DATA_DIR = Path(__file__).parent / "data"
 DATA_DIR.mkdir(exist_ok=True)  # Ensure folder exists
 
@@ -21,9 +19,8 @@ def get_macros():
     Returns:
         List[dict]: List of macro entries as dictionaries.
     """
-    # -------------------------
+
     # Step 1: Ensure CSV exists
-    # -------------------------
     if not MACROS_FILE.exists() or MACROS_FILE.stat().st_size == 0:
         logging.info("macros.csv missing or empty. Creating new file with headers.")
         df = pd.DataFrame(columns=DEFAULT_COLUMNS)
@@ -31,14 +28,10 @@ def get_macros():
         return []
 
     try:
-        # -------------------------
         # Step 2: Load CSV
-        # -------------------------
         df = pd.read_csv(MACROS_FILE)
 
-        # -------------------------
         # Step 3: Validate columns
-        # -------------------------
         missing_cols = [col for col in DEFAULT_COLUMNS if col not in df.columns]
         if missing_cols:
             logging.warning(f"Missing columns {missing_cols}. Adding them.")
@@ -48,21 +41,15 @@ def get_macros():
         # Keep only the default columns in correct order
         df = df[DEFAULT_COLUMNS]
 
-        # -------------------------
         # Step 4: Ensure numeric columns are numeric
-        # -------------------------
         numeric_cols = ["protein", "carbs", "fat", "calories"]
         for col in numeric_cols:
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
-        # -------------------------
         # Step 5: Save cleaned CSV
-        # -------------------------
         df.to_csv(MACROS_FILE, index=False)
 
-        # -------------------------
         # Step 6: Return as list of dicts
-        # -------------------------
         return df.to_dict(orient="records")
 
     except pd.errors.EmptyDataError:
