@@ -2,14 +2,14 @@ import pandas as pd
 from pathlib import Path
 import logging
 
-# Setup
+#Setup
 DATA_DIR = Path(__file__).parent / "data"
 DATA_DIR.mkdir(exist_ok=True)  # Ensure folder exists
 
 MACROS_FILE = DATA_DIR / "macros.csv"
 DEFAULT_COLUMNS = ["food", "protein", "carbs", "fat", "calories"]
 
-# Configure logging (prints to console; can be changed to file)
+#Configure logging (prints to console; can be changed to file)
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 
@@ -20,7 +20,7 @@ def get_macros():
         List[dict]: List of macro entries as dictionaries.
     """
 
-    # Step 1: Ensure CSV exists
+    #Step 1: Ensure CSV exists
     if not MACROS_FILE.exists() or MACROS_FILE.stat().st_size == 0:
         logging.info("macros.csv missing or empty. Creating new file with headers.")
         df = pd.DataFrame(columns=DEFAULT_COLUMNS)
@@ -28,55 +28,55 @@ def get_macros():
         return []
 
     try:
-        # Step 2: Load CSV
+        #Step 2: Load CSV
         df = pd.read_csv(MACROS_FILE)
 
-        # Step 3: Validate columns
+        #Step 3: Validate columns
         missing_cols = [col for col in DEFAULT_COLUMNS if col not in df.columns]
         if missing_cols:
             logging.warning(f"Missing columns {missing_cols}. Adding them.")
             for col in missing_cols:
                 df[col] = None
 
-        # Keep only the default columns in correct order
+        #Keep only the default columns in correct order
         df = df[DEFAULT_COLUMNS]
 
-        # Step 4: Ensure numeric columns are numeric
+        #Step 4: Ensure numeric columns are numeric
         numeric_cols = ["protein", "carbs", "fat", "calories"]
         for col in numeric_cols:
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
-        # Step 5: Save cleaned CSV
+        #Step 5: Save cleaned CSV
         df.to_csv(MACROS_FILE, index=False)
 
-        # Step 6: Return as list of dicts
+        #Step 6: Return as list of dicts
         return df.to_dict(orient="records")
 
     except pd.errors.EmptyDataError:
-        # CSV exists but is empty
+        #CSV exists but is empty
         logging.error("macros.csv is empty. Resetting headers.")
         df = pd.DataFrame(columns=DEFAULT_COLUMNS)
         df.to_csv(MACROS_FILE, index=False)
         return []
 
     except pd.errors.ParserError:
-        # Malformed CSV — skip bad lines
+        #Malformed CSV — skip bad lines
         logging.error("macros.csv is malformed. Attempting to repair by skipping bad lines.")
         df = pd.read_csv(MACROS_FILE, on_bad_lines="skip")
 
-        # Ensure all default columns exist
+        #Ensure all default columns exist
         for col in DEFAULT_COLUMNS:
             if col not in df.columns:
                 df[col] = None
 
         df = df[DEFAULT_COLUMNS]
 
-        # Ensure numeric columns
+        #Ensure numeric columns
         numeric_cols = ["protein", "carbs", "fat", "calories"]
         for col in numeric_cols:
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
-        # Save cleaned CSV
+        #Save cleaned CSV
         df.to_csv(MACROS_FILE, index=False)
 
         return df.to_dict(orient="records")
