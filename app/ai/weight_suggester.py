@@ -1,4 +1,16 @@
 class WeightSuggester:
+
     def suggest(self, workouts):
-        # Simple placeholder logic
-        return [{'exercise': w.get('exercise', ''), 'suggested_weight': 50} for w in workouts]
+
+        suggestions = []
+
+        for w in workouts:
+
+            exercise = w.get("exercise", "")
+
+            suggestions.append({
+                "exercise": exercise,
+                "suggested_weight": 50
+            })
+
+        return suggestions
