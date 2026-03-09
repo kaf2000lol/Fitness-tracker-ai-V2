@@ -1,28 +1,39 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <title>Progress</title>
+<title>Progress</title>
 </head>
+
 <body>
-    <h1>Workout Progress</h1>
-    <h2>Logged Workouts</h2>
-    <ul>
-        {% for w in workouts %}
-            <li>{{ w.exercise }} - {{ w.weight }} lbs x {{ w.reps }} reps</li>
-        {% endfor %}
-    </ul>
-    <h2>Predictions</h2>
-    <ul>
-        {% for p in predictions %}
-            <li>{{ p.exercise }}: Predicted 1RM: {{ p.predicted_1rm }}</li>
-        {% endfor %}
-    </ul>
-    <h2>Suggested Weights</h2>
-    <ul>
-        {% for s in suggested_weight %}
-            <li>{{ s.exercise }}: Suggested Weight: {{ s.suggested_weight }}</li>
-        {% endfor %}
-    </ul>
-    <a href="/">Back</a>
+
+<h1>Workout Progress</h1>
+
+<h2>Logged Workouts</h2>
+
+<ul>
+{% for w in workouts %}
+<li>{{ w.exercise }} - {{ w.weight }} lbs x {{ w.reps }} reps</li>
+{% endfor %}
+</ul>
+
+<h2>Predicted Strength</h2>
+
+<ul>
+{% for p in predictions %}
+<li>{{ p.exercise }} predicted 1RM: {{ p.predicted_1rm }}</li>
+{% endfor %}
+</ul>
+
+<h2>Suggested Weight</h2>
+
+<ul>
+{% for s in suggested_weight %}
+<li>{{ s.exercise }} suggested weight: {{ s.suggested_weight }}</li>
+{% endfor %}
+</ul>
+
+<a href="/">Back</a>
+
 </body>
 </html>
