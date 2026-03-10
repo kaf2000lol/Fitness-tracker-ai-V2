@@ -107,18 +107,27 @@ def enforce_numeric(df: pd.DataFrame, columns: list):
 # -----------------------------
 
 
-def log_workout(data: dict):
-    """
-    Safely logs a workout entry.
-    """
+def log_workout(data):
+
+    exercise = str(data.get("exercise", "")).strip()
+    weight = str(data.get("weight", "")).strip()
+    reps = str(data.get("reps", "")).strip()
+    sets = str(data.get("sets", "")).strip()
+
+    if not exercise or not weight or not reps or not sets:
+        logging.warning("Empty workout submission ignored.")
+        return
 
     df = safe_read_csv(WORKOUTS_FILE, WORKOUT_COLUMNS)
 
-    new_row = pd.DataFrame([data])
+    new_row = pd.DataFrame([{
+        "exercise": exercise,
+        "weight": weight,
+        "reps": reps,
+        "sets": sets
+    }])
 
     df = pd.concat([df, new_row], ignore_index=True)
-
-    df = enforce_numeric(df, NUMERIC_WORKOUT_COLUMNS)
 
     atomic_write(df, WORKOUTS_FILE)
 
