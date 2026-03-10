@@ -107,6 +107,8 @@ def enforce_numeric(df: pd.DataFrame, columns: list):
 # -----------------------------
 
 
+from datetime import datetime
+
 def log_workout(data):
 
     exercise = str(data.get("exercise", "")).strip()
@@ -121,13 +123,16 @@ def log_workout(data):
     df = safe_read_csv(WORKOUTS_FILE, WORKOUT_COLUMNS)
 
     new_row = pd.DataFrame([{
+        "date": datetime.now().strftime("%Y-%m-%d"),
         "exercise": exercise,
-        "weight": weight,
+        "sets": sets,
         "reps": reps,
-        "sets": sets
+        "weight": weight
     }])
 
     df = pd.concat([df, new_row], ignore_index=True)
+
+    df = enforce_numeric(df, NUMERIC_WORKOUT_COLUMNS)
 
     atomic_write(df, WORKOUTS_FILE)
 
